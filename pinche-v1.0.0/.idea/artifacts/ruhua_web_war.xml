@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="ruhua-web:war">
+    <output-path>$PROJECT_DIR$/ruhua-web/target</output-path>
+    <root id="archive" name="ruhua-web-1.0-SNAPSHOT.war">
+      <element id="artifact" artifact-name="ruhua-web:war exploded" />
+    </root>
+  </artifact>
+</component>

@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>拼车办进京证计划列表</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+    <!-- Optionally, include either the iOS or Android theme -->
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+
+      <style type="text/css">
+          #allmap {width: 100%;height: 70%;overflow: hidden;margin:0;}
+          #golist {display: none;}
+          @media (max-device-width: 780px){#golist{display: block !important;}}
+      </style>
+      <script type="text/javascript" src="http://api.map.baidu.com/api?type=quick&ak=6fP46nmEFeIQ5ZHwfPVyGYrA&v=1.0"></script>
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script language="javascript" type="text/javascript">
+        var community = "";
+        var gpsDoModalDomId="";
+        var gpsDoAddressDomId="";
+        var gpsDoLatDomId="";
+        var gpsDoLngDomId="";
+      $(function(){
+
+
+
+
+          var userBaseInfo=JSON.parse(localStorage.getItem("userBaseInfo"));
+          $("#plan-createUserName").val(userBaseInfo.userName);
+          $("#plan-createUser").val(userBaseInfo.id);
+          $("#joinPlan-userName").val(userBaseInfo.userName);
+          $("#joinPlan-userId").val(userBaseInfo.id);
+
+          getUserInfoFromServer();
+          getPinchePlanFromServer();
+          //search-box 随屏幕滚动
+          var _box_y = $("div.segmented-control").offset().top;
+          $(".content").scroll(function(){
+              if($(".content").scrollTop() > _box_y){
+                  $("div.segmented-control").css({position:"fixed",
+                      top:$("header").height(),"z-index":9});
+              } else {
+                  $("div.segmented-control").css({position:"static"});
+              }
+          });
+
+          // 百度地图API功能
+          var map = new BMap.Map("allmap");
+          map.centerAndZoom(new BMap.Point(116.404, 39.915),11);
+          // map.addControl(new BMap.ZoomControl());
+
+          var options = {
+              renderOptions:{
+//                    map: map,
+                  autoViewport:true,
+                  pageCapacity: 10},
+              onSearchComplete: function(results){
+                  if (local.getStatus() == BMAP_STATUS_SUCCESS){
+                      // 判断状态是否正确
+                      map.clearOverlays();
+                      var viewpoints = [];
+                      for (var i = 0; i < results.getCurrentNumPois(); i ++){
+
+                          (function () {
+                              var pt=results.getPoi(i).point;
+                              viewpoints.push(pt);
+                              var myIcon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {
+                                  offset: new BMap.Size(10, 25),                  // 指定定位位置
+                                  imageOffset: new BMap.Size(0, 0 - i * 25)   // 设置图片偏移
+                              });
+                              var marker1 = new BMap.Marker(pt, {icon: myIcon});
+                              // 将标注添加到地图中
+                              map.addOverlay(marker1);
+                              var pt1=results.getPoi(i).point;
+                              var msg=results.getPoi(i).title + ", " + results.getPoi(i).address;
+                              var title=results.getPoi(i).title;
+                              var infoWindow2 = new BMap.InfoWindow(msg);
+
+                              marker1.addEventListener("click", function () {
+                                  setAddress(pt1,msg);
+                                  this.openInfoWindow(infoWindow2);
+                              });
+                              if(i==0){
+                                  setAddress(pt,msg);
+                                  map.setCenter(pt);
+                                  marker1.openInfoWindow(infoWindow2);
+                              }
+
+                          }
+                          )();
+
+
+                      }
+                      map.setViewport(viewpoints);
+
+                  }
+              }
+          };
+
+          var local = new BMap.LocalSearch(map, options);
+
+
+          $("#btn-map-search").live("touchstart",function() {
+              // alert(11111111111111);
+              if($("#searchKey").val() == '') {
+                  toast("请输入地点关键词",3000);
+              }else{
+
+
+                  local.searchNearby("小区", $("#searchKey").val());
+
+              }
+
+          });
+          $("#searchKey").live("keydown",function(e){
+              if(e.keyCode==13){
+                  if($("#searchKey").val() == '') {
+                      toast("请输入地点关键词",3000);
+                  }else{
+                      local.searchNearby("小区", $("#searchKey").val());
+                  }
+              }
+          });
+          $("#refreshPlanList").live("touchstart",function() {
+              getPinchePlanFromServer();
+          });
+          $("#refreshPlanUsersList").live("touchstart",function() {
+              getPlanUsers();
+          });
+
+          $("#createPlan").live("touchstart",function() {
+
+              $("#createPlanModal").addClass("active");
+              gpsDoModalDomId="createPlanModal";
+              gpsDoAddressDomId="plan-jiheAddress";
+              gpsDoLatDomId="plan-lat";
+              gpsDoLngDomId="plan-lng";
+          });
+
+
+          $("#createPlanSave").live("touchstart",function() {
+
+              var jiHeAddress = $("#plan-jiheAddress").val();
+              if($("#plan-jiheAddress").val() == '') {
+                  toast("请选择下您的出发地点哦",3000);
+                  return;
+              }
+              if($("#plan-goAddress").val() == '') {
+                  toast("请选择下您的办证地点哦",3000);
+                  return;
+              }
+              if($("#plan-goDate").val() == '') {
+                  toast("请选择下您的出发日期哦",3000);
+                  return;
+              }
+              if($("#plan-goTime").val() == '') {
+                  toast("请选择下您的出发时间哦",3000);
+                  return;
+              }
+
+
+
+              $.ajax({
+                  async: true,
+                  type : 'get',
+                  dataType : 'jsonp',
+                  jsonp : 'jsoncallback', //默认callback
+                  timeout : 30000,
+                  data: {
+                      jiheAddress : jiHeAddress,
+                      goAddress :$("#plan-goAddress").val(),
+                      createUser:$("#plan-createUser").val(),
+                      lng : $("#plan-lng").val(),
+                      lat : $("#plan-lat").val(),
+                      pcMoney: $("#plan-pcMoney").val(),
+                      remark : $("#plan-remark").val(),
+                      goDate: $("#plan-goDate").val(),
+                      goTime : $("#plan-goTime").val()
+                  },
+                  url: baseFn.url + "/plan/createPinchePlan.json?callback=?",  // 跨域URL
+                  success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                      if(data.retCode == 0) {
+                          toast("保存成功",1000);
+                          setTimeout(function() {
+                              $("#createPlanModal").removeClass("active");
+
+                          },1000);
+                      } else {
+                          toast(data.retMsg,3000);
+                      }
+                  },
+                  error : function(xhr, errorType, error) {
+                      alert("失败");
+                  },
+                  complete: function(XMLHttpRequest, textStatus){
+                  }
+              });
+          });
+
+
+          $("#setting-community-choose").live("touchstart",function() {
+             // alert("定位");
+             // handleSuccess();
+              if (window.navigator.geolocation) {
+                  var options = {
+                      enableHighAccuracy: true
+                  };
+                  window.navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
+              } else {
+                  alert("浏览器不支持html5来获取地理位置信息");
+              }
+          });
+          $(".community-choose").live("touchstart",function() {
+              $(".community-choose").removeClass("community-choose-active");
+              $(this).addClass("community-choose-active");
+              community = $(this).text();
+              $("#"+gpsDoLngDomId).val($(this).prev().val());
+              $("#"+gpsDoLatDomId).val($(this).next().val());
+              $("#chooseCommunityButton").removeClass("btn-disable");
+          });
+          $("#chooseCommunityButton").live("touchstart",function() {
+              if(community == '') {
+                  return;
+              }
+              $("#"+gpsDoAddressDomId).val(community);
+              $("#chooseCommunity").removeClass("active");
+
+              $("#"+gpsDoModalDomId).addClass("active");
+          });
+
+
+
+          $("#planItem-a").live("touchstart",function() {
+              //alert($(this).prev().val());
+
+              $("#joinPlan-planId").val($(this).prev().val());
+              $("#joinPlanModal").addClass("active");
+
+              gpsDoModalDomId="joinPlanModal";
+              gpsDoAddressDomId="joinPlan-addAddress";
+              gpsDoLatDomId="joinPlan-lat";
+              gpsDoLngDomId="joinPlan-lng";
+
+          });
+          $("#joinPlanSave").live("touchstart",function() {
+
+              var userId = $("#joinPlan-userId").val();
+              if($("#joinPlan-addAddress").val() == '') {
+                  toast("请选择下您的出发地点哦",3000);
+                  return;
+              }
+
+              $.ajax({
+                  async: true,
+                  type : 'get',
+                  dataType : 'jsonp',
+                  jsonp : 'jsoncallback', //默认callback
+                  timeout : 30000,
+                  data: {
+                      userId : userId,
+                      addAddress :$("#joinPlan-addAddress").val(),
+                      lng : $("#joinPlan-lng").val(),
+                      lat : $("#joinPlan-lat").val(),
+                      planId : $("#joinPlan-planId").val(),
+                      saySamething : $("#joinPlan-saySamething").val()
+
+                  },
+                  url: baseFn.url + "/plan/insertPlanUsers.json?callback=?",  // 跨域URL
+                  success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                      if(data.retCode == 0) {
+                          toast("保存成功",1000);
+                          setTimeout(function() {
+                              $("#joinPlanModal").removeClass("active");
+
+                          },1000);
+                      } else {
+                          toast(data.retMsg,3000);
+                      }
+                  },
+                  error : function(xhr, errorType, error) {
+                      alert("失败");
+                  },
+                  complete: function(XMLHttpRequest, textStatus){
+                  }
+              });
+          });
+
+
+
+          $("#planUsers-a").live("touchstart",function() {
+              var planId=$(this).prev().val();
+
+              $("#planUsers-planId").val(planId);
+              $("#planUsersModal").addClass("active");
+                //alert(planId);
+              getPlanUsers();
+
+
+          });
+
+
+          $("#setting-community-choose-baidu").live("touchstart",function() {
+
+              $("#sel-address-lng").html("");
+              $("#sel-address-lat").html("");
+              $("#sel-address").html("");
+
+
+              $("#baiduMapdModal").addClass("active");
+//              if (window.navigator.geolocation) {
+//                  var options = {
+//                      enableHighAccuracy: true
+//                  };
+//                  window.navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
+//              } else {
+//                  alert("浏览器不支持html5来获取地理位置信息");
+//              }
+
+          });
+
+          $("#chooseAddressButton").live("touchstart",function() {
+              if(community == '') {
+                  return;
+              }
+              $("#"+gpsDoAddressDomId).val(community);
+              $("#baiduMapdModal").removeClass("active");
+              $("#"+gpsDoModalDomId).addClass("active");
+          });
+          $("#myInPlan-a").live("touchstart",function() {
+              //alert("my");
+              getMyINPlanFromServer();
+          });
+
+
+      });
+
+        function getPlanUsers(){
+            var planId =$("#planUsers-planId").val();
+            $.ajax({
+                async: true,
+                type : 'get',
+                dataType : 'jsonp',
+                jsonp : 'jsoncallback', //默认callback
+                timeout : 30000,
+                data: {
+                    planId : planId,
+                    abc:111
+
+                },
+                url: baseFn.url + "/plan/queryPlanUsersList.json?callback=?",  // 跨域URL
+                success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                    if(data.retCode == 0) {
+                        var userData = data.data;
+                        var userList=userData;
+                        var usersHtml = "";
+                        for(var i=0;i<userList.length;i++) {
+                            var id=userList[i].id
+                            var item="";
+                            item+="<li class=\"table-view-cell media\">";
+
+                            item+="<img class=\"media-object pull-left dawodehead\" width=55 height=55 src=\"img/head/1.jpg\">";
+                            item+="<div class=\"media-body\">";
+                            // item+=userList[i].id;
+                            item+="<p>昵称："+userList[i].userInfo.userName+"</p>";
+                            item+="<p>年龄："+userList[i].userInfo.age+"</p>";
+                            item+="<p>手机："+userList[i].userInfo.mobile+"</p>";
+                            item+="<p>地点："+userList[i].addAddress+"</p>";
+                            item+="<p>留言："+userList[i].saySamething+"</p>";
+                            var sexDesc="女";
+
+                            if(userList[i].userInfo.sex == '0') {
+                                sexDesc="男";
+                            }
+                            item+="<p>性别："+sexDesc+"</p>";
+                            var isCreater="否";
+                            if(userList[i].isCreateUser == '1') {
+                                isCreater="是";
+                            }
+                            item+="<p>是否创建人："+isCreater+"</p>";
+
+                            var state="邀请";
+                            if(userList[i].state == '1') {
+                                state="申请";
+                            }
+                            if(userList[i].state == '2') {
+                                state="已经确认";
+                            }
+                            if(userList[i].state == '3') {
+                                state="已放弃";
+                            }
+                            item+="<p>状态："+state+"</p>";
+
+                            //item+="<p>想办证时间："+userList[i].goTime+"</p>";
+                            //item+="<span class=\"dashantime\">办证时间："+ userList[i].goTime+"</span>";
+                            item+="</div>";
+                            //item+="<a  href=\"#yaoqingModal\" class=\"btn btn-primary invite-init\">邀请</a>";
+                            item+=" </li>";
+                            usersHtml+=item;
+                        }
+                        // alert(usersHtml);
+                        $("#table-ul-1").html("");
+                        $("#table-ul-1").append(usersHtml);
+
+                    } else {
+                        toast(data.retMsg,3000);
+                    }
+                },
+                error : function(xhr, errorType, error) {
+                    alert("失败");
+                },
+                complete: function(XMLHttpRequest, textStatus){
+                }
+            });
+        }
+      function handleSuccess(position){
+          // 获取到当前位置经纬度  本例中是chrome浏览器取到的是google地图中的经纬度
+          var lng = position.coords.longitude;
+          var lat = position.coords.latitude;
+
+//          var lng = 116.4741908808;
+//          var lat = 39.9090688843;
+          //alert(lng);
+          //alert(baseFn.url);
+          $.ajax({
+              async: true,
+              type : 'get',
+              dataType : 'jsonp',
+              jsonp : 'jsoncallback', //默认callback
+              timeout : 30000,
+              data: {
+                  type : 0,
+                  lng : lng,
+                  lat : lat
+              },
+              url: baseFn.url + "/location/findSurroundedPOI.json?callback=?",  // 跨域URL
+              // url:"http://api.map.baidu.com/place/v2/search?ak=6fP46nmEFeIQ5ZHwfPVyGYrA&output=json&query=%E5%B0%8F%E5%8C%BA&page_size=100&page_num=0&scope=2&location=40.006543,116.394458&radius=8000&filter=industry_type:house|sort_name:distance|sort_rule:1",
+              success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                 // alert(data);
+                  if(data.retCode == 0) {
+                      $("#surroundedCommunity").empty();
+                      var poiList = data.data;
+                      var communitys = "";
+                      for(var i=0;i<poiList.length;i++) {
+
+                          communitys += "<input class='lng' type='hidden' value='"+poiList[i].coordinate.lng+"'/>" +
+                          "<span class=\"community-choose\">"+poiList[i].name+"</span>" +
+                          "<input class='lat' type='hidden' value='"+poiList[i].coordinate.lat+"'/>";
+
+                      }
+                      //alert(gpsDoModalDomId);
+                      $("#surroundedCommunity").append(communitys);
+                      $("#"+gpsDoModalDomId).removeClass("active");
+                      $("#chooseCommunity").addClass("active");
+
+                  } else {
+                      toast(data.retMsg,3000);
+                  }
+              },
+              error : function(xhr, errorType, error) {
+                  alert("失败");
+              },
+              complete: function(XMLHttpRequest, textStatus){
+              }
+          });
+      }
+
+      function handleError(error){
+
+      }
+
+       function getUserInfoFromServer(){
+           $.ajax({
+               async: true,
+               type : 'get',
+               dataType : 'jsonp',
+               jsonp : 'jsoncallback', //默认callback
+               timeout : 30000,
+               url: baseFn.url + "/user/queryUserInfo.json?callback=?",  // 跨域URL
+
+               success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                   if(data.retCode == 0) {
+                       var userInfo = data.data;
+
+                       if(userInfo.community != null) {
+                           $("#plan-jiheAddress").val(userInfo.community);
+                           $("#plan-lng").val(userInfo.lng);
+                           $("#plan-lat").val(userInfo.lat);
+
+                           $("#joinPlan-addAddress").val(userInfo.community);
+                           $("#joinPlan-lng").val(userInfo.lng);
+                           $("#joinPlan-lat").val(userInfo.lat);
+                       }
+
+                   } else {
+                       toast(data.retMsg,3000);
+                   }
+               },
+               error : function(xhr, errorType, error) {
+                   toast(errorType,3000);
+                   location.href = "index.html";
+               },
+               complete: function(XMLHttpRequest, textStatus){
+               }
+           });
+      }
+
+      var getPinchePlanFromServer = function() {
+          getData("/plan/pinchePlanList.json",null,function(data) {
+              if(data.retCode == 0) {
+                  var pinchePlan = data.data;
+                  var pinchePlanList=pinchePlan.resultList;
+                  var pcHtml = "";
+                  for(var i=0;i<pinchePlanList.length;i++) {
+                      var id=pinchePlanList[i].id;
+                      var planUNum=pinchePlanList[i].planUsersNum+1;
+                      var plan="";
+                      plan+="<li class=\"table-view-cell media\">";
+
+                      plan+="<img class=\"media-object pull-left dawodehead\" width=25 height=25 src=\"img/head/5.jpg\">";
+                      plan+="<div class=\"media-body\">";
+                     // plan+=pinchePlanList[i].createTime;
+                      plan+="<p>出发地点："+pinchePlanList[i].jiheAddress+"</p>";
+                      plan+="<p>发起人："+pinchePlanList[i].createUserInfo.userName+"</p>";
+                      plan+="<p>手机："+pinchePlanList[i].createUserInfo.mobile+"</p>";
+
+                      plan+="<p>    前往："+pinchePlanList[i].goAddress+"</p>";
+                      plan+="<p>办证时间："+pinchePlanList[i].goDateYYYYMMDD+" "+pinchePlanList[i].goTime+"</p>";
+                      plan+="<p>分摊费用："+pinchePlanList[i].pcMoney+" ，参与人数：<input type=\"hidden\" value=\""+id+"\" id=\"plan-id1\"/><a   id=\"planUsers-a\" class=\"btn btn-positive invite-init\">"+planUNum +"</a></p>";
+                      plan+="<p>备注说明："+pinchePlanList[i].remark+"</p>";
+                      plan+="<p>发起时间："+pinchePlanList[i].createTime+"</p>";
+
+                      //plan+="<span class=\"dashantime\">办证时间："+ pinchePlanList[i].goTime+"</span>";
+                      plan+="</div> ";
+                      if('0'==pinchePlanList[i].delFlag){
+
+                          plan+="<input type=\"hidden\" value=\""+id+"\" id=\"plan-id2\"/> <a   id=\"planItem-a\" class=\"btn btn-primary invite-init\">参与</a>";
+                      }else{
+                          plan+="<input type=\"hidden\" value=\""+id+"\" id=\"plan-id2\"/> 已废弃";
+                      }
+                      plan+=" </li>";
+                      pcHtml+=plan;
+                  }
+                 // alert(pcHtml);
+                  $("#table-ul").html("");
+                  $("#table-ul").append(pcHtml);
+
+              } else if(data.retCode == 401) {
+                  //用户信息不完整
+                  $("#empty-da-img").attr("src","img/operate/empty.ico");
+                  $("#empty-da-img").attr("onclick","location.href='profile.html'");
+                  $("#empty-da-info").text("请完善信息");
+              }
+          });
+      };
+
+        var getMyINPlanFromServer = function() {
+            var userBaseInfo=JSON.parse(localStorage.getItem("userBaseInfo"));
+            var param={userId:userBaseInfo.id};
+            getData("/plan/queryMyInPlanList.json",param,function(data) {
+                if(data.retCode == 0) {
+                    var pinchePlan = data.data;
+                    var pinchePlanList=pinchePlan;
+                    var pcHtml = "";
+                    for(var i=0;i<pinchePlanList.length;i++) {
+                        var id=pinchePlanList[i].id;
+                        var planUNum=pinchePlanList[i].planUsersNum+1;
+                        var plan="";
+                        plan+="<li class=\"table-view-cell media\">";
+
+                        plan+="<img class=\"media-object pull-left dawodehead\" width=25 height=25 src=\"img/head/5.jpg\">";
+                        plan+="<div class=\"media-body\">";
+                        // plan+=pinchePlanList[i].createTime;
+                        plan+="<p>出发地点："+pinchePlanList[i].jiheAddress+"</p>";
+                        plan+="<p>发起人："+pinchePlanList[i].createUserInfo.userName+"</p>";
+                        plan+="<p>手机："+pinchePlanList[i].createUserInfo.mobile+"</p>";
+
+                        plan+="<p>    前往："+pinchePlanList[i].goAddress+"</p>";
+                        plan+="<p>办证时间："+pinchePlanList[i].goDateYYYYMMDD+" "+pinchePlanList[i].goTime+"</p>";
+                        plan+="<p>分摊费用："+pinchePlanList[i].pcMoney+" ，参与人数：<input type=\"hidden\" value=\""+id+"\" id=\"plan-id1\"/><a   id=\"planUsers-a\" class=\"btn btn-primary invite-init\">"+planUNum +"</a></p>";
+                        plan+="<p>备注说明："+pinchePlanList[i].remark+"</p>";
+                        plan+="<p>发起时间："+pinchePlanList[i].createTime+"</p>";
+
+                        //plan+="<span class=\"dashantime\">办证时间："+ pinchePlanList[i].goTime+"</span>";
+                        plan+="</div> ";
+                        if('0'==pinchePlanList[i].delFlag){
+
+                            plan+="<input type=\"hidden\" value=\""+id+"\" id=\"plan-id2\"/> ";
+                        }else{
+                            plan+="<input type=\"hidden\" value=\""+id+"\" id=\"plan-id2\"/> 已废弃";
+                        }
+                        plan+=" </li>";
+                        pcHtml+=plan;
+                    }
+                     //alert(pcHtml);
+                    $("#table-ul-myInPlan").html("");
+                    $("#table-ul-myInPlan").append(pcHtml);
+
+                } else if(data.retCode == 401) {
+                    //用户信息不完整
+                    $("#empty-da-img").attr("src","img/operate/empty.ico");
+                    $("#empty-da-img").attr("onclick","location.href='profile.html'");
+                    $("#empty-da-info").text("请完善信息");
+                }
+            });
+        };
+
+
+
+        function setAddress(point,address){
+            //alert(e.point.lng + ", " + e.point.lat);
+            $("#sel-address-lng").html(point.lng);
+            $("#sel-address-lat").html(point.lat);
+
+            community=address;
+            $("#sel-address").html(community);
+            $("#setting-community").val(community);
+            $("#"+gpsDoLngDomId).val(point.lng);
+            $("#"+gpsDoLatDomId).val(point.lat);
+            $("#chooseAddressButton").removeClass("btn-disable");
+
+        }
+
+
+    </script>
+
+  </head>
+  <body>
+  <header class="bar bar-nav">
+      <button class="btn pull-left" id="refreshPlanList">
+          刷新
+      </button>
+      <button class="btn pull-right" id="createPlan">
+          发起
+      </button>
+      <h1 class="title">附近办进京证计划</h1>
+      <div id="head">
+      <a href="location.html" data-ignore="push">
+          <br>[定位位置]
+      </a>
+  </div>
+  </header>
+
+    <!-- Wrap all non-bar HTML in the .content div (this is actually what scrolls) -->
+    <div id="content" class="content">
+        <p class="content-padded"></p>
+        <div class="segmented-control">
+            <a class="control-item active" href="#nearByPlan">
+                附近计划
+                (<span id="nearByPlanNum">半径5公里</span>)
+            </a>
+            <a class="control-item" href="#myInPlan" id="myInPlan-a">
+                我参与的办证计划
+                <!--(<span id="myInPlanNum"></span>)-->
+            </a>
+        </div>
+
+        <div id="pinchePlan" >
+            <div class="card">
+                <span id="nearByPlan" class="control-content active">
+                    <ul class="table-view" id="table-ul">
+
+                    <li class="table-view-cell media">
+                        <span id="empty-plan-info" class="empty-da-info">加载中，如果一直搜索不到附近计划请到“我”页面，设置我的地址</span>
+                    </li>
+                    </ul>
+
+                </span>
+                <span id="myInPlan" class="control-content">
+                 <ul class="table-view" id="table-ul-myInPlan">
+                     <li class="table-view-cell media">
+                         <span id="empty-info" >加载中。。。</span>
+                     </li>
+                 </ul>
+                </span>
+            </div>
+        </div>
+
+
+
+
+        <div class="input-row">
+            <button id="loadNextPage" class="btn  btn-block">加载更多</button>
+        </div>
+        <div class="input-row">
+
+        </div>
+        <div class="input-row">
+
+        </div>
+
+      <nav class="bar bar-tab">
+          <a class="tab-item active" >
+              <span class="icon icon-sound2"></span>
+              <span class="tab-label">拼车计划</span>
+          </a>
+          <a class="tab-item" onclick="location.href='yue.html'">
+              <span class="icon icon-forward"></span>
+              <span class="tab-label">附近拼车人</span>
+          </a>
+          <a class="tab-item " href="#">
+              <span class="icon icon-person" onclick="location.href='me.html'"></span>
+              <span class="tab-label">我</span>
+          </a>
+      </nav>
+
+    </div>
+  <div id="createPlanModal" class="modal">
+      <header class="bar bar-nav">
+          <a class="icon icon-close pull-right" href="#createPlanModal"></a>
+          <h1 class="title">发起拼车办进京证计划</h1>
+      </header>
+      <p class="content-padded"></p>
+      <div id="creatform">
+          <form class="input-group">
+
+              <p class="content-padded"></p>
+              <div class="input-row">
+                  <!--占位-->
+              </div>
+              <div class="input-row">
+                  <label>发起人</label>
+                  <input type="text" id="plan-createUserName" disabled />
+                  <input type="hidden" id="plan-createUser"/>
+              </div>
+
+              <div class="input-row">
+                  <label>出发地址</label>
+                  <input type="text" id="plan-jiheAddress" placeholder="出发地址"/>
+
+                  <input type="hidden" id="plan-lng"/>
+                  <input type="hidden" id="plan-lat"/>
+              </div>
+              <div class="input-row">
+                  <label>其他地址</label>
+                  <a id="setting-community-choose-baidu" class="btn" >选择其他地址作为出发地址</a>
+
+              </div>
+              <div class="input-row">
+                  <label>办证点</label>
+                  <input type="text" id="plan-goAddress" placeholder="前往办证地点，例如窦店" />
+              </div>
+              <div class="input-row">
+                  <label>分摊费用</label>
+                  <input type="text" id="plan-pcMoney" placeholder="分摊费用每人" />
+              </div>
+              <div class="input-row">
+                  <label>前往日期</label>
+                  <input type="date" id="plan-goDate" placeholder="日期" />
+              </div>
+              <div class="input-row">
+                  <label>前往时间</label>
+                  <input type="time" id="plan-goTime" placeholder="具体时间" />
+              </div>
+
+              <div class="input-row">
+                  <label>备注说明</label>
+                  <input type="text" id="plan-remark" placeholder="备注" />
+              </div>
+          </form>
+          <button id="createPlanSave" class="btn btn-positive btn-block">保存</button>
+      </div>
+  </div>
+  <div id="chooseCommunity" class="modal">
+      <header class="bar bar-nav">
+          <a class="btn pull-left" href="#chooseCommunity">返回</a>
+          <h1 class="title">选择小区</h1>
+          <a id="chooseCommunityButton" class="btn pull-right btn-disable">
+              完成
+          </a>
+      </header>
+      <div class="content">
+          <div id="surroundedCommunity">
+          </div>
+      </div>
+  </div>
+
+  <div id="joinPlanModal"
+      class="modal">
+      <header class="bar bar-nav">
+          <a class="icon icon-close pull-right" href="#joinPlanModal"></a>
+          <h1 class="title">参与</h1>
+      </header>
+      <p class="content-padded"></p>
+      <div id="joinPlanForm">
+          <form class="input-group">
+
+              <p class="content-padded"></p>
+              <div class="input-row">
+                  <!--占位-->
+              </div>
+              <div class="input-row">
+                  <label>参与人</label>
+                  <input type="text" id="joinPlan-userName" disabled />
+                  <input type="hidden" id="joinPlan-userId"/>
+              </div>
+
+              <div class="input-row">
+                  <label>我的地址</label>
+                  <input type="text" id="joinPlan-addAddress" placeholder="我的地址"/>
+
+                  <input type="hidden" id="joinPlan-lng"/>
+                  <input type="hidden" id="joinPlan-lat"/>
+                  <input type="hidden" id="joinPlan-planId"/>
+              </div>
+              <div class="input-row">
+                  <label>其他地址</label>
+                  <a id="setting-community-choose-baidu" class="btn" >选择其他地址作为出发地址</a>
+
+              </div>
+
+              <div class="input-row">
+                  <label>备注</label>
+                  <input type="text" id="joinPlan-saySamething" placeholder="备注" />
+              </div>
+          </form>
+          <div class="bar bar-standard bar-footer">
+              <a class="btn pull-left" href="#joinPlanModal">
+                  取消
+              </a>
+              <a id="joinPlanSave" class="btn pull-right">
+                  确认参加
+              </a>
+          </div>
+          <!--<button id="joinPlanSave" class="btn btn-positive btn-block">参加</button>-->
+          </div>
+
+  </div>
+
+  <div id="planUsersModal"
+       class="modal">
+
+
+      <header class="bar bar-nav">
+          <button class="btn pull-left" id="refreshPlanUsersList">
+              刷新
+          </button>
+          <a class="icon icon-close pull-right" href="#planUsersModal"></a>
+          <h1 class="title">参与人列表</h1>
+      </header>
+
+      <div class="content">
+          <input type="hidden" id="planUsers-planId"/>
+          <ul class="table-view" id="table-ul-1">
+              <!--<li class="table-view-cell media">-->
+              <!--<img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">-->
+              <!--<div class="media-body">-->
+              <!--张涵-->
+              <!--<p>样本小区</p>-->
+              <!--<span class="dashantime">27岁</span>-->
+              <!--</div>-->
+              <!--<a  href="#yaoqingModal" class="btn btn-primary invite-init">邀请</a>-->
+              <!--</li>-->
+
+          </ul>
+          </div>
+  </div>
+
+
+
+  <div id="baiduMapdModal"   class="modal">
+      <header class="bar bar-nav">
+
+          <a class="btn pull-left" href="#baiduMapdModal">返回</a>
+          <h1 class="title">地图定位</h1>
+
+          <a id="chooseAddressButton" class="btn pull-right btn-disable">
+              完成
+          </a>
+      </header>
+      <div id="allmap"></div>
+          <div class="input-row">
+
+              <input  type="search" id="searchKey"  placeholder="关键字地图检索" />
+
+          </div>
+
+      <button id="btn-map-search" class="btn btn-positive btn-block">搜索</button>
+
+      <div >
+          <h5 class="content-padded">已选地址:</h5>
+              <span class="badge" id="sel-address"></span>
+              <span class="badge" id="sel-address-lng"></span>
+              <span class="badge" id="sel-address-lat"></span>
+
+
+
+
+
+      </div>
+  </div>
+    <link href="css/common.css" rel="stylesheet">
+    <link href="css/da.css" rel="stylesheet">
+  <link href="css/me.css" rel="stylesheet">
+  </body>
+</html>

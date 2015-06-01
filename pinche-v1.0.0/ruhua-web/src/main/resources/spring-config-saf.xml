@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:saf="http://code.360buy.com/schema/saf"
+
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+            http://code.360buy.com/schema/saf
+            http://code.360buy.com/schema/saf/saf.xsd http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+
+    <saf:registry id="jdO2ORegistry" protocol="jdZooKeeper"  address="${mvn.saf-zookeeper.url}"/>
+
+    <!-- define protocol -->
+    <!--<saf:protocol id="mydubbo" name="dubbo" port="-1" floatingipfile="${mvn.saf.floatingipfile}"/>-->
+    <!--&lt;!&ndash;判断是不是在配送范围内&ndash;&gt;-->
+    <!--<saf:reference id="locationService" interface="com.jd.o2o.lsp.api.location.LocationService"-->
+                   <!--group="${mvn.saf.o2o.location.service.group}"-->
+                   <!--version="${mvn.saf.o2o.location.service.version}"-->
+                   <!--check="false"/>-->
+    <!--<saf:reference id="msgService" interface="com.jd.o2o.wechat.api.msg.MsgService"-->
+                   <!--group="${saf.o2o.jdone.wechat.group}"-->
+                   <!--version="${saf.o2o.jdone.wechat.version}"-->
+                   <!--check="false"/>-->
+
+    <!--<saf:reference id="appPrivilegeService" interface="com.jd.josl.privilege.api.app.AppPrivilegeService"-->
+                   <!--version="${mvn.saf.o2o.privilege.version}" group="${mvn.saf.o2o.privilege.group}" check="false"/>-->
+
+</beans>

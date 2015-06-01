@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="PinchePlanMapper">
+
+    <resultMap id="PinchePlanMap" type="com.ruhua.domain.user.PinchePlan">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="jihe_address" property="jiheAddress" jdbcType="VARCHAR"/>
+        <result column="jihe_address_type" property="jiheAddressType" jdbcType="VARCHAR"/>
+        <result column="go_address" property="goAddress" jdbcType="VARCHAR"/>
+        <result column="pc_money" property="pcMoney" jdbcType="BIGINT"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="go_date" property="goDate" jdbcType="TIMESTAMP"/>
+        <result column="go_time" property="goTime" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="DATE"/>
+        <result column="create_user" property="createUser" jdbcType="INTEGER"/>
+        <result column="lng" property="lng" jdbcType="DOUBLE"/>
+        <result column="lat" property="lat" jdbcType="DOUBLE"/>
+        <result column="VERSION" property="version" jdbcType="INTEGER"/>
+        <result column="update_time" property="updateTime" jdbcType="DATE"/>
+        <result column="del_flag" property="delFlag" jdbcType="VARCHAR"/>
+    </resultMap>
+    <sql id="allColumn">
+        id,jihe_address,jihe_address_type,go_address,pc_money,
+        remark,go_date,go_time,create_time,create_user,lng,lat,
+        VERSION,update_time,del_flag
+    </sql>
+    <sql id="notnullColumn">
+        id,VERSION
+    </sql>
+    <!-- 插入PinchePlan，可空字段过滤null值(开始) -->
+    <insert id="insertPinchePlan"
+            parameterType="PinchePlan">
+        <selectKey resultType="java.lang.Integer" keyProperty="id">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into pinche_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">id,
+            <if test="null != jiheAddress">
+                jihe_address,
+            </if>
+            <if test="null != jiheAddressType">
+                jihe_address_type,
+            </if>
+            <if test="null != goAddress">
+                go_address,
+            </if>
+            <if test="null != pcMoney">
+                pc_money,
+            </if>
+            <if test="null != remark">
+                remark,
+            </if>
+            <if test="null != goTime">
+                go_time,
+            </if>
+            <if test="null != goDate">
+                go_date,
+            </if>
+                create_time,
+            <if test="null != createUser">
+                create_user,
+            </if>
+            <if test="null != lng">
+                lng,
+            </if>
+            <if test="null != lat">
+                lat,
+            </if>
+            <if test="null != delFlag">
+                del_flag,
+            </if>update_time,
+            VERSION
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id,jdbcType=BIGINT},
+            <if test="null != jiheAddress">
+                #{jiheAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="null != jiheAddressType">
+                #{jiheAddressType,jdbcType=VARCHAR},
+            </if>
+            <if test="null != goAddress">
+                #{goAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="null != pcMoney">
+                #{pcMoney,jdbcType=BIGINT},
+            </if>
+            <if test="null != remark">
+                #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="null != goTime">
+                #{goTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="null != goDate">
+                #{goDate,jdbcType=VARCHAR},
+            </if>
+                now(),
+            <if test="null != createUser">
+                #{createUser,jdbcType=INTEGER},
+            </if>
+            <if test="null != lng">
+                #{lng,jdbcType=DOUBLE},
+            </if>
+            <if test="null != lat">
+                #{lat,jdbcType=DOUBLE},
+            </if>
+            <if test="null != delFlag">
+                #{delFlag,jdbcType=VARCHAR},
+            </if>now(),0
+        </trim>
+    </insert>
+    <!-- 插入PinchePlan，可空字段过滤null值(结束) -->
+
+
+
+    <select id="pageQueryCriteriaCount" parameterType="com.ruhua.domain.common.PinchePlanCriteria"  resultType="Long" >
+        select
+        COUNT(id)
+        from pinche_plan
+        <where>
+            1 = 1
+            <include refid="sqlCondition_selectUseCriteria"/>
+        </where>
+    </select>
+
+    <select id="pageQueryCriteria" resultType="PinchePlan"
+            parameterType="com.ruhua.domain.common.PinchePlanCriteria">
+
+        select
+        <include refid="allColumn"/>
+        from pinche_plan
+        <where>
+            1 = 1
+            <include refid="sqlCondition_selectUseCriteria"/>
+        </where>
+        <include refid="sortSql"/>
+
+        LIMIT #{rowStart}, #{pageSize}
+
+
+    </select>
+    <sql id="sqlCondition_selectUseCriteria">
+
+        <if test="jiheAddress != null">
+            and jihe_address = #{jiheAddress,jdbcType=VARCHAR}
+        </if>
+        <if test="jiheAddressType != null">
+            and jihe_address_type = #{jiheAddressType,jdbcType=VARCHAR}
+        </if>
+        <if test="goAddress != null">
+            and go_address = #{goAddress,jdbcType=VARCHAR}
+        </if>
+        <if test="pcMoney != null">
+            and pc_money = #{pcMoney,jdbcType=BIGINT}
+        </if>
+        <if test="remark != null">
+            and remark = #{remark,jdbcType=VARCHAR}
+        </if>
+        <if test="goTime != null">
+            and go_time = #{goTime,jdbcType=TIMESTAMP}
+        </if>
+        <if test="createTime != null">
+            and create_time = #{createTime,jdbcType=TIMESTAMP}
+        </if>
+        <if test="createUser != null">
+            and create_user = #{createUser,jdbcType=INTEGER}
+        </if>
+        <if test="null != delFlag">
+            and del_flag= #{delFlag,jdbcType=VARCHAR}
+        </if>
+
+        <if test="maxLat != null">
+            <![CDATA[ and #{maxLat} >= lat   ]]>
+        </if>
+        <if test="minLat != null">
+            <![CDATA[ and lat >=  #{minLat} ]]>
+        </if>
+        <if test="maxLng != null">
+            <![CDATA[ and #{maxLng} >= lng   ]]>
+        </if>
+        <if test="minLng != null">
+            <![CDATA[ and lng >=  #{minLng} ]]>
+        </if>
+
+
+
+        <if test="beginTime != null">
+            <![CDATA[  and create_time >= #{beginTime,jdbcType=TIMESTAMP} ]]>
+        </if>
+        <if test="endTime != null">
+            <![CDATA[ and create_time < #{endTime,jdbcType=TIMESTAMP} ]]>
+        </if>
+
+    </sql>
+    <sql id="sortSql">
+        ORDER BY
+        <choose>
+            <when test="sortItemMap == null">
+                del_flag asc,create_time DESC
+            </when>
+            <otherwise>
+                <foreach collection="sortItemMap.keySet()" item="field" separator=",">
+                    <choose>
+                        <when test="field == 'createTime'">
+                            create_time ${sortItemMap.createTime}
+                        </when>
+                        <when test="field == 'goTime'">
+                            go_time ${sortItemMap.goTime}
+                        </when>
+                        <when test="field == 'goDate'">
+                            go_date ${sortItemMap.goDate}
+                        </when>
+
+                    </choose>
+                </foreach>
+            </otherwise>
+        </choose>
+    </sql>
+
+    <select id="getById" parameterType="Long"  resultType="PinchePlan">
+        SELECT
+        <include refid="allColumn"/>
+        FROM pinche_plan
+        WHERE  ID = #{id}
+    </select>
+
+    <!-- 根据主键更新PlanUsers所有字段(开始) -->
+
+
+    <update id="updatePinchePlanByKey" parameterType="PinchePlan">
+        update pinche_plan
+        <set>
+
+            <if test="jiheAddress != null">
+                jihe_address = #{jiheAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="jiheAddressType != null">
+                jihe_address_type = #{jiheAddressType,jdbcType=VARCHAR},
+            </if>
+            <if test="goAddress != null">
+                go_address = #{goAddress,jdbcType=VARCHAR},
+            </if>
+            <if test="pcMoney != null">
+                pc_money = #{pcMoney,jdbcType=BIGINT},
+            </if>
+            <if test="remark != null">
+                remark = #{remark,jdbcType=VARCHAR},
+            </if>
+            <if test="goDate != null">
+                go_date = #{goDate,jdbcType=TIMESTAMP},
+            </if>
+            <if test="goTime != null">
+                go_time = #{goTime,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="createUser != null">
+                create_user = #{createUser,jdbcType=INTEGER},
+            </if>
+            <if test="lng != null">
+                lng = #{lng,jdbcType=DOUBLE},
+            </if>
+            <if test="lat != null">
+                lat = #{lat,jdbcType=DOUBLE},
+            </if>
+            <if test="null != delFlag">
+                del_flag=#{delFlag,jdbcType=VARCHAR},
+            </if>update_time=now(),
+                VERSION = VERSION+1
+
+        </set>
+        where
+        id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <!-- 根据主键更新PlanUsers所有字段(结束) -->
+</mapper>

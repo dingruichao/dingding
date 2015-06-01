@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/ruhua.iml" filepath="$PROJECT_DIR$/ruhua.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-api/ruhua-api.iml" filepath="$PROJECT_DIR$/ruhua-api/ruhua-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-common/ruhua-common.iml" filepath="$PROJECT_DIR$/ruhua-common/ruhua-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-dao/ruhua-dao.iml" filepath="$PROJECT_DIR$/ruhua-dao/ruhua-dao.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-domain/ruhua-domain.iml" filepath="$PROJECT_DIR$/ruhua-domain/ruhua-domain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-service/ruhua-service.iml" filepath="$PROJECT_DIR$/ruhua-service/ruhua-service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ruhua-web/ruhua-web.iml" filepath="$PROJECT_DIR$/ruhua-web/ruhua-web.iml" />
+    </modules>
+  </component>
+</project>
+

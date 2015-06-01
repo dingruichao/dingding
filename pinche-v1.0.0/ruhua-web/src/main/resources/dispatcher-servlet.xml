@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+         http://www.springframework.org/schema/context 
+         http://www.springframework.org/schema/context/spring-context-3.1.xsd
+	     http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+         http://www.springframework.org/schema/util
+    	 http://www.springframework.org/schema/util/spring-util-3.1.xsd" default-autowire="byName">
+
+    <mvc:resources location="/html/" mapping="/html/**" />
+
+    <bean id="dateFormat" class="java.text.SimpleDateFormat">
+        <constructor-arg value="yyyy-MM-dd HH:mm:ss"/>
+    </bean>
+
+    <bean id="objectMapper" class="org.codehaus.jackson.map.ObjectMapper">
+        <property name="dateFormat" ref="dateFormat">
+        </property>
+        <property name="serializationInclusion">
+            <util:constant static-field="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion.NON_NULL"/>
+        </property>
+    </bean>
+
+    <bean id="conversionService"
+          class="org.springframework.format.support.FormattingConversionServiceFactoryBean">
+        <property name="formatters">
+            <set>
+                <bean class="com.ruhua.common.springmvc.ext.convert.DateFormatter">
+                    <property name="format" value="${common.dateFormat}"/>
+                </bean>
+            </set>
+        </property>
+    </bean>
+
+    <context:component-scan base-package="com.ruhua.web">
+    </context:component-scan>
+
+    <mvc:annotation-driven conversion-service="conversionService">
+        <mvc:message-converters>
+            <bean class="com.ruhua.common.springmvc.ext.convert.CustomMappingJacksonHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>application/json</value>
+                        <value>application/javascript</value>
+                        <value>text/json</value>
+                        <value>text/javascript</value>
+                        <value>text/html</value>
+                    </list>
+                </property>
+                <property name="objectMapper" ref="objectMapper">
+                </property>
+                <property name="failOnUnknownProperties" value="false"/><!--
+        <property name="serializationInclusion">
+          <util:constant static-field="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion.NON_NULL"/>
+        </property>-->
+            </bean>
+        </mvc:message-converters>
+        <mvc:argument-resolvers>
+            <bean class="com.ruhua.common.springmvc.ext.method.annotation.RequestJsonParamMethodArgumentResolver">
+                <property name="objectMapper" ref="objectMapper"/>
+            </bean>
+        </mvc:argument-resolvers>
+    </mvc:annotation-driven>
+
+    <bean id="mappingJacksonHttpMessageConverter"
+          class="com.ruhua.common.springmvc.ext.convert.CustomMappingJacksonHttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>application/json</value>
+                <value>application/javascript</value>
+                <value>text/json</value>
+                <value>text/javascript</value>
+                <value>text/plain</value>
+                <value>text/html</value>
+            </list>
+        </property>
+        <property name="objectMapper" ref="objectMapper">
+        </property>
+        <property name="failOnUnknownProperties" value="false"/>
+        <property name="serializationInclusion">
+            <util:constant static-field="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion.NON_NULL"/>
+        </property>
+    </bean>
+
+    <util:list id="messageConverters">
+        <ref bean="mappingJacksonHttpMessageConverter"></ref>
+    </util:list>
+
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <property name="defaultContentType" value="text/html"/>
+        <!-- not by accept header -->
+        <property name="ignoreAcceptHeader" value="true"/>
+        <!-- by extension -->
+        <property name="mediaTypes">
+            <map>
+                <entry key="xml" value="application/xml"/>
+                <entry key="json" value="application/json"/>
+            </map>
+        </property>
+        <property name="viewResolvers">
+            <list>
+            </list>
+        </property>
+        <property name="defaultViews">
+            <list>
+                <!-- for application/json -->
+                <bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean class="org.springframework.web.servlet.handler.HandlerExceptionResolverComposite">
+        <property name="exceptionResolvers">
+            <util:list>
+                <bean class="com.ruhua.web.exception.SecurityExceptionResolver">
+                    <property name="order" value="0"></property>
+                </bean>
+                <bean class="com.ruhua.web.exception.RuhuaResponseBodyExceptionResolver">
+                    <property name="order" value="1"></property>
+                </bean>
+                <bean class="com.ruhua.common.springmvc.exception.resolver.O2OResponseBodyExceptionResolver">
+                    <property name="order" value="2"></property>
+                </bean>
+            </util:list>
+        </property>
+    </bean>
+    <mvc:interceptors>
+        <!--登陆拦截器-->
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <bean class="com.ruhua.web.interceptor.LoginInterceptor">
+                <!-- 登录页面 -->
+                <property name="loginUrl" value="index.html"/>
+            </bean>
+        </mvc:interceptor>
+    </mvc:interceptors>
+</beans>

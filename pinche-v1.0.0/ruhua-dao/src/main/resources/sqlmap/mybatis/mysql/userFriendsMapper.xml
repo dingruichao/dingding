@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="UserFriendsMapper">
+       <!--for mysql,by zhanghuibin-->
+       <resultMap id="userFriendsMap" type="com.ruhua.domain.user.UserFriends">
+              <id column="id" property="id" jdbcType="BIGINT"/>
+              <result column="user_id" property="userId" jdbcType="INTEGER"/>
+              <result column="Friend_user_id" property="friendUserId" jdbcType="INTEGER"/>
+              <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+
+              <result column="VERSION" property="version" jdbcType="INTEGER"/>
+              <result column="del_flag" property="delFlag" jdbcType="VARCHAR"/>
+              <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+              <result column="remark" property="remark" jdbcType="VARCHAR"/>
+       </resultMap>
+       <sql id="allColumn">
+              id,user_id,Friend_user_id,create_time,VERSION,del_flag,update_time,remark
+       </sql>
+
+
+
+
+
+       <!-- 插入UserFriends，可空字段过滤null值(开始) -->
+       <insert id="insertUserFriends"
+               parameterType="UserFriends">
+              <selectKey resultType="java.lang.Integer" keyProperty="id">
+                     select LAST_INSERT_ID()
+              </selectKey>
+              insert into user_friends
+              <trim prefix="(" suffix=")" suffixOverrides=",">id,
+                     <if test="null != userId">
+                            user_id,
+                     </if>
+                     <if test="null != friendUserId">
+                            Friend_user_id,
+                     </if> create_time,
+                     <if test="null != delFlag">
+                            del_flag,
+                     </if>update_time,
+
+                     <if test="null != remark">
+                            remark,
+                     </if>VERSION
+              </trim>
+              values
+              <trim prefix="(" suffix=")" suffixOverrides=",">
+                     #{id,jdbcType=BIGINT},
+                     <if test="null != userId">
+                            #{userId,jdbcType=INTEGER},
+                     </if>
+                     <if test="null != friendUserId">
+                            #{friendUserId,jdbcType=INTEGER},
+                     </if>
+                    now(),
+                     <if test="null != delFlag">
+                            #{delFlag,jdbcType=VARCHAR},
+                     </if>
+                    now(),
+                     <if test="null != remark">
+                            #{remark,jdbcType=TIMESTAMP},
+                     </if>0
+              </trim>
+       </insert>
+       <!-- 插入UserFriends，可空字段过滤null值(结束) -->
+
+       <!-- 更新UserFriends(开始) -->
+       <update id="updateByKey" parameterType="UserFriends">
+              update user_friends
+              <set>
+
+
+                     <if test="userId != null">
+                            user_id = #{userId,jdbcType=INTEGER},
+                     </if>
+                     <if test="friendUserId != null">
+                            Friend_user_id = #{friendUserId,jdbcType=INTEGER},
+                     </if>
+                     <if test="createTime != null">
+                            create_time = #{createTime,jdbcType=TIMESTAMP},
+                     </if>
+
+
+                     <if test="delFlag != null">
+                            del_flag = #{delFlag,jdbcType=VARCHAR},
+                     </if>update_time=now(),
+
+                     <if test="remark != null">
+                            remark = #{remark,jdbcType=VARCHAR},
+                     </if>
+
+                            VERSION = VERSION+1
+              </set>
+              where
+              id = #{id,jdbcType=BIGINT}
+       </update>
+       <!-- 更新UserFriends(结束) -->
+       <select id="getById" parameterType="Long"  resultType="UserFriends">
+              SELECT
+              <include refid="allColumn"/>
+              FROM user_friends
+              WHERE  ID = #{id}
+       </select>
+       <select id="getByBizKey" parameterType="Long"  resultType="UserFriends">
+              SELECT
+              <include refid="allColumn"/>
+              FROM user_friends
+              WHERE  user_id = #{userId} and  Friend_user_id = #{friendUserId,jdbcType=INTEGER}
+       </select>
+       <delete id="deleteById" parameterType="Integer" >
+              DELETE FROM user_friends
+              WHERE  ID = #{id}
+       </delete>
+       <delete id="deleteByBizKey" parameterType="UserFriends" >
+              DELETE FROM user_friends
+               WHERE  user_id = #{userId} and  Friend_user_id = #{friendUserId,jdbcType=INTEGER}
+       </delete>
+
+
+       <select id="pageQueryCriteriaCount" parameterType="com.ruhua.domain.common.UserFriendsCriteria"
+               resultType="Long" >
+              select
+              COUNT(id)
+              from user_friends
+              <where>
+                     1 = 1
+                     <include refid="sqlCondition_selectUseCriteria"/>
+              </where>
+       </select>
+
+       <select id="pageQueryCriteria" resultType="UserFriends"
+               parameterType="com.ruhua.domain.common.UserFriendsCriteria">
+
+              select
+              <include refid="allColumn"/>
+              from user_friends
+              <where>
+                     1 = 1
+                     <include refid="sqlCondition_selectUseCriteria"/>
+              </where>
+              <include refid="sortSql"/>
+
+              LIMIT #{rowStart}, #{pageSize}
+
+
+       </select>
+       <sql id="sqlCondition_selectUseCriteria">
+
+              <if test="userId != null">
+                     and user_Id = #{userId}
+              </if>
+
+              <if test="delFlag != null">
+                     and del_flag = #{delFlag}
+              </if>
+
+              <if test="beginTime != null">
+                     <![CDATA[  and create_time >= #{beginTime,jdbcType=TIMESTAMP} ]]>
+              </if>
+              <if test="endTime != null">
+                     <![CDATA[ and create_time < #{endTime,jdbcType=TIMESTAMP} ]]>
+              </if>
+
+       </sql>
+       <sql id="sortSql">
+              ORDER BY
+              <choose>
+                     <when test="sortItemMap == null">
+                            create_time DESC
+                     </when>
+                     <otherwise>
+                            <foreach collection="sortItemMap.keySet()" item="field" separator=",">
+                                   <choose>
+                                          <when test="field == 'createTime'">
+                                                 create_time ${sortItemMap.createTime}
+                                          </when>
+                                          <when test="field == 'userId'">
+                                                 user_Id ${sortItemMap.userId}
+                                          </when>
+
+
+                                   </choose>
+                            </foreach>
+                     </otherwise>
+              </choose>
+       </sql>
+
+</mapper>

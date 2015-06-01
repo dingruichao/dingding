@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="PlanUsersMapper">
+       <!--for mysql,by -->
+       <resultMap id="planUsersMap" type="com.ruhua.domain.user.PlanUsers">
+              <id column="id" property="id" jdbcType="BIGINT"/>
+              <result column="user_id" property="userId" jdbcType="BIGINT"/>
+              <result column="say_samething" property="saySamething" jdbcType="VARCHAR"/>
+              <result column="lng" property="lng" jdbcType="DOUBLE"/>
+              <result column="lat" property="lat" jdbcType="DOUBLE"/>
+              <result column="add_address" property="addAddress" jdbcType="VARCHAR"/>
+              <result column="VERSION" property="version" jdbcType="INTEGER"/>
+              <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+              <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+              <result column="plan_id" property="planId" jdbcType="BIGINT"/>
+              <result column="state" property="state" jdbcType="INTEGER"/>
+
+       </resultMap>
+       <sql id="allColumn">
+              id,user_id,say_samething,lng,lat,add_address,VERSION,create_time,update_time,plan_id,state
+       </sql>
+       <sql id="notnullColumn">
+              id,VERSION
+       </sql>
+
+       <select id="getPlanUserByBizKey" resultType="PlanUsers"
+               parameterType="PlanUsers">
+
+              select
+              <include refid="allColumn"/>
+              from plan_users
+              <where>
+                     1 = 1
+                     and plan_id= #{planId,jdbcType=BIGINT}
+                     and user_id=#{userId,jdbcType=BIGINT}
+              </where>
+
+
+       </select>
+
+       <!-- 插入PlanUsers，可空字段过滤null值(开始) -->
+       <insert id="insertPlanUsers"
+               parameterType="com.ruhua.domain.user.PlanUsers">
+              <selectKey resultType="java.lang.Integer" keyProperty="id">
+                     select LAST_INSERT_ID()
+              </selectKey>
+              insert into plan_users
+              <trim prefix="(" suffix=")" suffixOverrides=",">id,
+                     <if test="null != userId">
+                            user_id,
+                     </if>
+                     <if test="null != saySamething">
+                            say_samething,
+                     </if>
+                     <if test="null != lng">
+                            lng,
+                     </if>
+                     <if test="null != lat">
+                            lat,
+                     </if>
+                     <if test="null != addAddress">
+                            add_address,
+                     </if>
+                     <if test="null != planId">
+                            plan_id,
+                     </if>
+                     <if test="null != state">
+                            state,
+                     </if>
+
+                     VERSION,
+                            create_time,
+                            update_time
+
+              </trim>
+              values
+              <trim prefix="(" suffix=")" suffixOverrides=",">
+                     #{id,jdbcType=BIGINT},
+                     <if test="null != userId">
+                            #{userId},
+                     </if>
+                     <if test="null != saySamething">
+                            #{saySamething},
+                     </if>
+                     <if test="null != lng">
+                            #{lng,jdbcType=DOUBLE},
+                     </if>
+                     <if test="null != lat">
+                            #{lat,jdbcType=DOUBLE},
+                     </if>
+                     <if test="null != addAddress">
+                            #{addAddress,jdbcType=VARCHAR},
+                     </if>
+                     <if test="null != planId">
+                            #{planId,jdbcType=BIGINT},
+                     </if>
+                     <if test="null != state">
+                            #{state},
+                     </if>
+
+                     0,
+                     now(),now()
+              </trim>
+       </insert>
+       <!-- 插入PlanUsers，可空字段过滤null值(结束) -->
+
+
+       <!-- 根据主键更新PlanUsers所有字段(开始) -->
+       <update id="updatePlanUsersByKey" parameterType="PlanUsers">
+
+                     update plan_users
+                     <set>
+
+                            <if test="userId != null">
+                                   user_id = #{userId,jdbcType=BIGINT},
+                            </if>
+                            <if test="saySamething != null">
+                                   say_samething = #{saySamething,jdbcType=VARCHAR},
+                            </if>
+                            <if test="lng != null">
+                                   lng = #{lng,jdbcType=DOUBLE},
+                            </if>
+                            <if test="lat != null">
+                                   lat = #{lat,jdbcType=DOUBLE},
+                            </if>
+                            <if test="addAddress != null">
+                                   add_address = #{addAddress,jdbcType=VARCHAR},
+                            </if>
+
+                            <if test="createTime != null">
+                                   create_time = #{createTime,jdbcType=TIMESTAMP},
+                            </if>
+
+                            <if test="planId != null">
+                                   plan_id = #{planId,jdbcType=BIGINT},
+                            </if>
+                            <if test="state != null">
+                                   state = #{state,jdbcType=INTEGER},
+                            </if>
+                            VERSION = VERSION+1,
+                            update_time = now()
+                     </set>
+                     where
+                     id = #{id,jdbcType=BIGINT}
+              </update>
+
+       <!-- 根据主键更新PlanUsers所有字段(结束) -->
+
+       <select id="pageQueryCriteriaCount" parameterType="com.ruhua.domain.common.PlanUsersCriteria"  resultType="Long" >
+              select
+              COUNT(id)
+              from plan_users
+              <where>
+                     1 = 1
+                     <include refid="sqlCondition_selectUseCriteria"/>
+              </where>
+       </select>
+
+       <select id="pageQueryCriteria" resultType="PlanUsers"
+               parameterType="com.ruhua.domain.common.PlanUsersCriteria">
+
+              select
+              <include refid="allColumn"/>
+              from plan_users
+              <where>
+                     1 = 1
+                     <include refid="sqlCondition_selectUseCriteria"/>
+              </where>
+              <include refid="sortSql"/>
+
+              LIMIT #{rowStart}, #{pageSize}
+
+
+       </select>
+       <sql id="sqlCondition_selectUseCriteria">
+
+              <if test="userId != null">
+                     and user_Id = #{userId}
+              </if>
+              <if test="saySamething != null">
+                     and say_Samething = #{saySamething,jdbcType=VARCHAR}
+              </if>
+              <if test="addAddress != null">
+                     and add_address = #{addAddress,jdbcType=VARCHAR}
+              </if>
+              <if test="planId != null">
+                     and plan_id = #{planId}
+              </if>
+              <if test="state != null">
+                     and state = #{state}
+              </if>
+
+
+              <if test="maxLat != null">
+                     <![CDATA[ and #{maxLat} >= lat   ]]>
+              </if>
+              <if test="minLat != null">
+                     <![CDATA[ and lat >=  #{minLat} ]]>
+              </if>
+              <if test="maxLng != null">
+                     <![CDATA[ and #{maxLng} >= lng   ]]>
+              </if>
+              <if test="minLng != null">
+                     <![CDATA[ and lng >=  #{minLng} ]]>
+              </if>
+
+
+
+              <if test="beginTime != null">
+                     <![CDATA[  and create_time >= #{beginTime,jdbcType=TIMESTAMP} ]]>
+              </if>
+              <if test="endTime != null">
+                     <![CDATA[ and create_time < #{endTime,jdbcType=TIMESTAMP} ]]>
+              </if>
+
+       </sql>
+       <sql id="sortSql">
+              ORDER BY
+              <choose>
+                     <when test="sortItemMap == null">
+                            create_time DESC
+                     </when>
+                     <otherwise>
+                            <foreach collection="sortItemMap.keySet()" item="field" separator=",">
+                                   <choose>
+                                          <when test="field == 'createTime'">
+                                                 create_time ${sortItemMap.createTime}
+                                          </when>
+                                          <when test="field == 'planId'">
+                                                 plan_id ${sortItemMap.planId}
+                                          </when>
+
+
+                                   </choose>
+                            </foreach>
+                     </otherwise>
+              </choose>
+       </sql>
+
+
+
+</mapper>

@@ -1,0 +1,50 @@
+.dashantime {
+	font-size: 12px;
+	color: rgb(197, 197, 197);
+}
+img.dawodehead {
+	border-radius:50%;
+	border: solid 1px #FF64F7;
+}
+.invite-init {
+	border:0;
+	background-color: rgb(253, 125, 147);
+}
+.content>.table-view:first-child {
+	margin-top: 0px;
+}
+.tapArea {
+  	z-index: 99;
+  	position: absolute;
+	width: 100%;
+	background-color: white;
+	bottom: 0px;
+	opacity:0.97;
+	box-shadow: 3px 3px 3px #000;
+	font-family: 'Arial Narrow', sans-serif;
+}
+.firstStep-head {
+	padding: 10px;
+}
+.stepMsg {
+	color: gray;
+	float: right;
+	font-size: 0.5em;
+}
+#doWhat { 
+	padding:10px;
+	text-align: center;
+}
+#nextArea { 
+	padding:10px;
+	padding-bottom: 50px;
+}
+#doWhat >input {
+	margin:10px;
+}
+.nextStepButton {
+	float: right;
+}
+#firstStep {
+	display: none;
+}
