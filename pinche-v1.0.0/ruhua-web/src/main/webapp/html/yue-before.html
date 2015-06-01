@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>约会</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+    <link href="css/ratchet-theme-ios.min.css" rel="stylesheet">
+    <link href="css/yue.css" rel="stylesheet">
+    <!-- Optionally, include either the iOS or Android theme -->
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script language="javascript" type="text/javascript">
+      $$(function(){
+        $(".date_what").click(function() {
+          alert("111");
+        });
+      });
+      var dowhat = function(type) {
+        $("#gowhere").css({"display":"none"});
+        $(".backdrop").remove();
+        $(".title .name").text(type);
+      }
+    </script>
+  </head>
+  <body>
+    <!-- Wrap all non-bar HTML in the .content div (this is actually what scrolls) -->
+    <div class="content">
+      <ul class="table-view">
+        <li class="table-view-cell media">
+          <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">
+          <div class="media-body">
+            张涵
+            <p>样本小区</p>
+            <span class="dashantime">27岁</span>
+          </div>
+          <a  href="#yaoqingModal" class="btn btn-primary invite-init">邀请</a>
+        </li>
+        <li class="table-view-cell media">
+          <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">
+          <div class="media-body">
+            张涵
+            <p>样本小区</p>
+            <span class="dashantime">27岁</span>
+          </div>
+          <button id="inviteActive" class="btn btn-primary invite-init">邀请</button>
+        </li>
+        <li class="table-view-cell media">
+          <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">
+          <div class="media-body">
+            张涵
+            <p>样本小区</p>
+            <span class="dashantime">27岁</span>
+          </div>
+          <button class="btn btn-primary invite-init">邀请</button>
+        </li>
+        <li class="table-view-cell media">
+          <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">
+          <div class="media-body">
+            张涵
+            <p>样本小区</p>
+            <span class="dashantime">27岁</span>
+          </div>
+          <button class="btn btn-primary invite-init">邀请</button>
+        </li>
+        <li class="table-view-cell media">
+          <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">
+          <div class="media-body">
+            张涵
+            <p>样本小区</p>
+            <span class="dashantime">27岁</span>
+          </div>
+          <button class="btn btn-primary invite-init">邀请</button>
+        </li>
+      </ul>
+      <nav class="bar bar-tab">
+        <a class="tab-item" onclick="location.href='da.html'">
+          <span class="icon icon-sound2"></span>
+          <span class="tab-label">搭讪</span>
+        </a>
+        <a class="tab-item active" href="#">
+          <span class="icon icon-forward"></span>
+          <span class="tab-label">约会</span>
+        </a>
+        <a class="tab-item" onclick="location.href='me.html'">
+          <span class="icon icon-person"></span>
+          <span class="tab-label">我</span>
+        </a>
+      </nav>
+    </div>
+    <!-- 邀请 -->
+    <div id="yaoqingModal" class="modal">
+      <header class="bar bar-nav">
+        <a href="#gowhere">
+          <h1 class="title">
+            <span class="name">去干嘛</span>
+            <span class="icon icon-caret"></span>
+          </h1>
+        </a>
+      </header>
+      <div id="gowhere" class="popover">
+        <ul class="table-view">
+          <li class="table-view-cell" onclick="dowhat('吃饭');" class="date_what">吃饭</li>
+          <li class="table-view-cell" onclick="dowhat('看电影');" class="date_what">看电影</li>
+          <li class="table-view-cell" onclick="dowhat('K歌');" class="date_what">K歌</li>
+        </ul>
+      </div>
+      <div class="content">
+
+      </div>
+      <!-- Icons in standard bar fixed to the bottom of the screen -->
+      <div class="bar bar-standard bar-footer">
+        <a class="btn pull-left" href="#yaoqingModal">
+          取消
+        </a>
+        <a id="submitButton" class="btn pull-right">
+          发出邀请
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

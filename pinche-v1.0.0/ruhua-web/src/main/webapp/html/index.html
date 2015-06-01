@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>轩轩-拼车办进京证</title>
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link href="css/common.css" rel="stylesheet">
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+
+    <!-- Optionally, include either the iOS or Android theme -->
+    <link href="css/ratchet-theme-ios.min.css" rel="stylesheet">
+    <link href="css/index_login_reg.css" rel="stylesheet">
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/screen_adjust.js"></script>
+    <script src="js/index_login_reg.js"></script>
+    <script src="js/md5.js"></script>
+    <script language="javascript" type="text/javascript">
+        $$(function () {
+            $("#loginbutton").live("touchstart",function() {
+                $("#loginArea").show();
+            });
+            $("#regbutton").live("touchstart",function() {
+                $("#regArea").show();
+            });
+            $("#background-logo").live("touchstart",function() {
+                $("#loginArea").hide();
+                $("#regArea").hide();
+            });
+            $("#regSubmit").live("touchstart",function() {
+                if(!validateReg()) {
+                    return;
+                }
+                $.ajax({
+                    async: true,
+                    type : 'get',
+                    dataType : 'jsonp',
+                    jsonp : 'jsoncallback', //默认callback
+                    timeout : 20000,
+                    url: baseFn.url + "/user/createAccount.json?callback=?",  // 跨域URL
+                    data: {
+                      userName : $("#name4reg").val(),
+                      email : $("#email4reg").val(),
+                        mobile : $("#mobile4reg").val(),
+                      pass2Md5 : hex_md5($("#password4reg").val())
+                    },
+                    success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                        if(data.retCode == 0) {
+                            var userBaseInfo=data.data;
+                            localStorage.setItem("userBaseInfo",JSON.stringify(userBaseInfo));
+                            location.href = "/html/me.html";
+                        } else {
+                            toast(data.retMsg,3000);
+                        }
+                    },
+                    error : function(xhr, errorType, error) {
+                        alert("失败");
+                    },
+                    complete: function(XMLHttpRequest, textStatus){
+                    }
+                });
+            });
+            $("#loginSubmit").live("touchstart",function() {
+                if(!validateLogin()) {
+                    return;
+                }
+                $.ajax({
+                    async: true,
+                    type : 'get',
+                    dataType : 'jsonp',
+                    jsonp : 'jsoncallback', //默认callback
+                    timeout : 20000,
+                    url: baseFn.url + "/user/login.json?callback=?",  // 跨域URL
+                    data: {
+                        email : $("#email4login").val(),
+                        mobile : $("#email4login").val(),
+                        pass2Md5 : hex_md5($("#password4login").val())
+                    },
+                    success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                        if(data.retCode == 0) {
+                            var userBaseInfo=data.data;
+                            localStorage.setItem("userBaseInfo",JSON.stringify(userBaseInfo));
+                            location.href = "/html/me.html";
+                        } else {
+                            toast("登录名或者密码输入错误",3000);
+                        }
+                    },
+                    error : function(xhr, errorType, error) {
+                        alert("失败");
+                    },
+                    complete: function(XMLHttpRequest, textStatus){
+                    }
+                });
+            });
+        });
+        var validateReg = function() {
+            if($("#name4reg").val().trim() == '') {
+                toast("请填写姓名",3000);
+                return false;
+            }
+            if($("#email4reg").val().trim() == '') {
+                toast("请填写邮箱",3000);
+                return false;
+            }else{
+                var pattern = /^[\w-\.]+\@[\w\.-]+\.[a-z]{2,4}$/;
+                if (!pattern.test($("#email4reg").val().trim())) {
+                    toast("请填写正确的邮箱",3000);
+                    return false;
+                }
+            }
+            if($("#mobile4reg").val().trim() == '') {
+                toast("请填写手机号",3000);
+                return false;
+            }
+            if($("#password4reg").val().trim() == '') {
+                toast("请创建密码",3000);
+                return false;
+            }
+            if(false==validateMobile($("#mobile4reg").val().trim())){
+                return false;
+            }
+            return true;
+        }
+        var validateLogin = function() {
+            if($("#email4login").val().trim() == '') {
+                toast("请输入邮箱或者手机号",3000);
+                return false;
+            }
+            if($("#password4login").val().trim() == '') {
+                toast("请输入密码",3000);
+                return false;
+            }
+            return true;
+        }
+
+        function validateMobile(mobile)
+        {
+            if(mobile.length==0)
+            {
+                toast('请输入手机号码！',3000);
+                return false;
+            }
+            if(mobile.length!=11)
+            {
+                toast('请输入有效的手机号码！',3000);
+                return false;
+            }
+
+            var myreg = /^((13|17|18|15)+\d{9})$/;
+            if(!myreg.test(mobile))
+            {
+                toast('请输入有效的手机号码！',3000);
+                return false;
+            }
+        }
+    </script>
+  </head>
+  <body>
+    <div class="content">
+      <div id="background-logo">
+          <img id="background-logo-img" src="img/background-logo.jpg"/>
+      </div>
+      <div id="function_segment">
+        <div id="reg_login_button">
+          <!--<button id="qq_login" class="btn btn-primary btn-block">-->
+            <!--<img width="18px" height="18px" src="img/qqlogo.png"/>使用QQ账号登录-->
+          <!--</button>-->
+          <div>
+            <button id="regbutton" class="btn btn-primary btn-outlined">注册</button>
+            <button id="loginbutton" class="btn btn-primary btn-outlined">登录</button>
+          </div>
+        </div>
+      </div>
+      <div id="loginArea" class="tapArea"><!--登录框-->
+        <input id="email4login" class="normalinput" autocapitalize="off" type="text" placeholder="邮箱或者手机号">
+        <input id="password4login" class="normalinput" type="password" placeholder="密码">
+        <!--<div style="text-align:center;"><a href="#resetpassword" id="forgotpassword">忘记密码?</a></div>-->
+        <button id="loginSubmit" class="btn btn-block btn-primary normalSubmit">登录</button>
+      </div>
+      <div id="regArea" class="tapArea"><!--注册框-->
+        <input id="name4reg" class="normalinput" type="text" placeholder="姓名">
+        <input id="email4reg" class="normalinput" autocapitalize="off" type="email" placeholder="邮箱">
+          <input id="mobile4reg" class="normalinput" autocapitalize="off" type="text" placeholder="手机">
+        <input id="password4reg" class="normalinput" type="password" placeholder="创建密码">
+        <button id="regSubmit" class="btn btn-block btn-primary normalSubmit">加入</button>
+      </div>
+    </div>
+    <!-- 重置密码 -->
+    <div id="resetpassword" class="modal">
+      <header class="bar bar-nav">
+        <a class="icon icon-close pull-right" href="#resetpassword"></a>
+        <h1 class="title">重置密码</h1>
+      </header>
+      <div class="content" style="background-color:white;">
+        <form class="input-group" style="margin-top:10px;">
+          <input type="email" autocapitalize="off" placeholder="邮箱">
+        </form>
+        <div class="content-padded">
+          <button class="btn btn-positive btn-block">发送重置密码邮件</button>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>编辑地址</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+    <!-- Optionally, include either the iOS or Android theme -->
+      <style type="text/css">
+          #allmap {width: 100%;height: 70%;overflow: hidden;margin:0;}
+          #golist {display: none;}
+          @media (max-device-width: 780px){#golist{display: block !important;}}
+      </style>
+      <script type="text/javascript" src="http://api.map.baidu.com/api?type=quick&ak=6fP46nmEFeIQ5ZHwfPVyGYrA&v=1.0"></script>
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script language="javascript" type="text/javascript">
+        var community = "";
+        var gpsDoModalDomId="";
+        var gpsDoAddressDomId="";
+        var gpsDoLatDomId="setting-community-lat";
+        var gpsDoLngDomId="setting-community-lng";
+
+
+        $(function(){
+            // 百度地图API功能
+            var map = new BMap.Map("allmap");
+            map.centerAndZoom(new BMap.Point(116.404, 39.915),11);
+            map.addControl(new BMap.ZoomControl());
+
+            var options = {
+                renderOptions:{
+//                    map: map,
+                    autoViewport:true,
+                    pageCapacity: 10},
+                onSearchComplete: function(results){
+                    if (local.getStatus() == BMAP_STATUS_SUCCESS){
+                        // 判断状态是否正确
+                        map.clearOverlays();
+                        var viewpoints = [];
+                        for (var i = 0; i < results.getCurrentNumPois(); i ++){
+
+                            (function () {
+                                var pt=results.getPoi(i).point;
+                                viewpoints.push(pt);
+                                var myIcon = new BMap.Icon("http://api.map.baidu.com/img/markers.png", new BMap.Size(23, 25), {
+                                         offset: new BMap.Size(10, 25),                  // 指定定位位置
+                                           imageOffset: new BMap.Size(0, 0 - i * 25)   // 设置图片偏移
+                                });
+                                var marker1 = new BMap.Marker(pt, {icon: myIcon});
+                                // 将标注添加到地图中
+                                map.addOverlay(marker1);
+                                var pt1=results.getPoi(i).point;
+                                var msg=results.getPoi(i).title + ", " + results.getPoi(i).address;
+                                var title=results.getPoi(i).title;
+                                var infoWindow2 = new BMap.InfoWindow(msg);
+
+                                marker1.addEventListener("click", function () {
+                                    setAddress(pt1,msg);
+                                    this.openInfoWindow(infoWindow2);
+                                });
+                                if(i==0){
+                                    setAddress(pt,msg);
+                                    map.setCenter(pt);
+                                    marker1.openInfoWindow(infoWindow2);
+                                }
+
+                            }
+                            )();
+
+
+                        }
+                        map.setViewport(viewpoints);
+
+                    }
+                }
+            };
+
+            var local = new BMap.LocalSearch(map, options);
+
+            $("#btn-map-search").live("touchstart",function() {
+                // alert(11111111111111);
+                if($("#searchKey").val() == '') {
+                    toast("请输入地点关键词",3000);
+                }else{
+
+                    local.searchNearby("小区", $("#searchKey").val());
+                   // local.search( $("#searchKey").val());
+
+                }
+
+            });
+
+            $("#searchKey").live("keydown",function(e){
+                if(e.keyCode==13){
+
+                    if($("#searchKey").val() == '') {
+                        toast("请输入地点关键词",3000);
+                    }else{
+
+                        local.searchNearby("小区", $("#searchKey").val());
+                        //local.search( $("#searchKey").val());
+
+                    }
+                }
+            });
+
+            $("#chooseAddressButton").live("touchstart",function() {
+
+                var address = $("#setting-community").val();
+                if($("#setting-community").val() == '') {
+                    toast("请选择下您的地址哦",3000);
+                    return;
+                }
+
+
+                $.ajax({
+                    async: true,
+                    type : 'get',
+                    dataType : 'jsonp',
+                    jsonp : 'jsoncallback', //默认callback
+                    timeout : 30000,
+                    data: {
+                        community : address,
+                        lng : $("#setting-community-lng").val(),
+                        lat : $("#setting-community-lat").val()
+                    },
+                    url: baseFn.url + "/user/saveSettingLocationInfo.json?callback=?",  // 跨域URL
+                    success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                        if(data.retCode == 0) {
+                            var userBaseInfo=data.data;
+                            localStorage.setItem("userBaseInfo",JSON.stringify(userBaseInfo));
+                            toast("保存成功",1000);
+                            setTimeout(function() {
+                                location.href = "da.html";
+                            },1000);
+                        } else {
+                            toast(data.retMsg,3000);
+                        }
+                    },
+                    error : function(xhr, errorType, error) {
+                        alert("失败");
+                    },
+                    complete: function(XMLHttpRequest, textStatus){
+                    }
+                });
+            });
+
+      });
+
+        function setAddress(point,address){
+            //alert(e.point.lng + ", " + e.point.lat);
+            $("#sel-address-lng").html(point.lng);
+            $("#sel-address-lat").html(point.lat);
+
+            community=address;
+            $("#sel-address").html(community);
+            $("#setting-community").val(community);
+            $("#"+gpsDoLngDomId).val(point.lng);
+            $("#"+gpsDoLatDomId).val(point.lat);
+            $("#chooseAddressButton").removeClass("btn-disable");
+
+        }
+
+
+    </script>
+  </head>
+  <body>
+    <!-- Make sure all your bars are the first things in your <body> -->
+
+
+        <div id="baiduMapdModal"  class="content" >
+            <header class="bar bar-nav">
+
+                <a class="btn pull-left" href="javascript:baseFn.pageBack();">返回</a>
+                <h1 class="title">地图定位</h1>
+
+                <a id="chooseAddressButton" class="btn pull-right btn-disable">
+                    完成
+                </a>
+            </header>
+            <div id="allmap"></div>
+
+                <div class="input-row">
+
+                    <input  type="search" id="searchKey"  placeholder="关键字地图检索"  />
+
+                </div>
+
+            <button id="btn-map-search" class="btn btn-positive btn-block">搜索</button>
+
+            <div >
+                <h5 class="content-padded">已选地址:</h5>
+                    <span class="badge" id="sel-address"></span>
+                    <br>
+                    <span class="badge" id="sel-address-lng"></span>
+                    <span class="badge" id="sel-address-lat"></span>
+
+                    <input id="setting-community" type="hidden"/>
+
+                    <input type="hidden" id="setting-community-lng"/>
+                    <input type="hidden" id="setting-community-lat"/>
+                    <br>
+
+
+            </div>
+        </div>
+  </body>
+</html>

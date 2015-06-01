@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>修改密码</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+
+    <!-- Optionally, include either the iOS or Android theme -->
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+      <script src="js/md5.js"></script>
+
+    <script language="javascript" type="text/javascript">
+        $(function(){
+            var userBaseInfo=JSON.parse(localStorage.getItem("userBaseInfo"));
+            $("#setting-name").val(userBaseInfo.userName);
+            $("#setting-id").val(userBaseInfo.id);
+
+
+
+            $("#btn-modifyPwd").live("touchstart",function() {
+                modifyPWD();
+            });
+
+        });
+        function modifyPWD(){
+            if(!validatePwd()) {
+                return;
+            }
+            $.ajax({
+                async: true,
+                type : 'get',
+                dataType : 'jsonp',
+                jsonp : 'jsoncallback', //默认callback
+                timeout : 30000,
+                data: {
+                    id:  $("#setting-id").val(),
+                    oldPass2Md5 : hex_md5($("#old-pwd").val()),
+                    newPass2Md5 : hex_md5($("#new-pwd").val()),
+                    newPass2Md52 : hex_md5($("#new-pwd2").val())
+                },
+                url: baseFn.url + "/user/modifyPassword.json?callback=?",  // 跨域URL
+
+                success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                    if(data.retCode == 0) {
+                        toast("修改密码成功",3000);
+                    } else {
+                        toast(data.retMsg,3000);
+                    }
+                },
+                error : function(xhr, errorType, error) {
+                    toast(errorType,3000);
+                    location.href = "index.html";
+                },
+                complete: function(XMLHttpRequest, textStatus){
+                }
+            });
+        }
+        var validatePwd = function() {
+            if($("#old-pwd").val().trim() == '') {
+                toast("请填写原密码",3000);
+                return false;
+            }
+            if($("#new-pwd").val().trim() == '') {
+                toast("请填写新密码",3000);
+                return false;
+            }
+            if($("#new-pwd2").val().trim() == '') {
+                toast("请填写新密码确认",3000);
+                return false;
+            }else{
+                if (!($("#new-pwd").val().trim()==$("#new-pwd2").val().trim())) {
+                    toast("两次新密码不一致",3000);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+    </script>
+  </head>
+  <body>
+    <!-- Make sure all your bars are the first things in your <body> -->
+    <header class="bar bar-nav">
+
+      <h1 class="title">修改密码</h1>
+        <a class="btn pull-left"  onclick="location.href='me.html'">返回</a>
+    </header>
+
+    <div class="content">
+        <form class="input-group">
+            <div class="input-row">
+                <label>昵称</label>
+                <input id="setting-name" type="text" placeholder="昵称" disabled value="" />
+                <input id="setting-id" type="hidden" />
+            </div>
+            <div class="input-row">
+                <label>原密码</label>
+                <input id="old-pwd" type="password" placeholder="原密码" />
+            </div>
+            <div class="input-row">
+                <label>新密码</label>
+                <input id="new-pwd" type="password" placeholder="新密码" />
+            </div>
+            <div class="input-row">
+                <label>新密码确认</label>
+                <input id="new-pwd2" type="password" placeholder="新密码确认" />
+            </div>
+
+
+        </form>
+        <button id="btn-modifyPwd" class="btn btn-positive btn-block">修 改</button>
+    </div>
+
+  </body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>附近拼车人</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+    <link href="css/ratchet-theme-ios.min.css" rel="stylesheet">
+    <link href="css/yue.css" rel="stylesheet">
+    <!-- Optionally, include either the iOS or Android theme -->
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script language="javascript" type="text/javascript">
+      $$(function(){
+        $(".date_what").click(function() {
+          alert("111");
+        });
+        getNearByUsersFromServer();
+        $("#goYaoqingModal").live("touchstart",function() {
+          var userId=$(this).prev().val();
+        $("#add-user-id").val(userId);
+        $("#yaoqingModal").addClass("active");
+        });
+        $("#btn-AddUserFriend").live("touchstart",function() {
+          var userId=$("#add-user-id").val();
+          addUserFriend(userId);
+          $("#yaoqingModal").removeClass("active");
+        });
+
+        $("#refreshList").live("touchstart",function() {
+          getNearByUsersFromServer();
+        });
+      });
+      var dowhat = function(type) {
+        $("#gowhere").css({"display":"none"});
+        $(".backdrop").remove();
+        $(".title .name").text(type);
+      }
+
+
+
+
+      var getNearByUsersFromServer = function() {
+        getData("/user/nearByUserList.json",null,function(data) {
+          if(data.retCode == 0) {
+            var userData = data.data;
+            var userList=userData.resultList;
+            var usersHtml = "";
+            for(var i=0;i<userList.length;i++) {
+              var id=userList[i].id;
+              var item="";
+              item+="<li class=\"table-view-cell media\">";
+
+              item+="<img class=\"media-object pull-left dawodehead\" width=55 height=55 src=\"img/head/1.jpg\">";
+              item+="<div class=\"media-body\">";
+              // item+=userList[i].id;
+              item+="<p>昵称："+userList[i].userName+"</p>";
+              item+="<p>手机："+userList[i].mobile+"</p>";
+              item+="<p>年龄："+userList[i].age+"</p>";
+              item+="<p>地点："+userList[i].community+"</p>";
+              var sexDesc="女";
+              if(userList[i].sex == '0') {
+                sexDesc="男";
+              }
+              item+="<p>性别："+sexDesc+"</p>";
+
+
+
+              //item+="<p>想办证时间："+userList[i].goTime+"</p>";
+              //item+="<span class=\"dashantime\">办证时间："+ userList[i].goTime+"</span>";
+              item+="</div>";
+
+              item+="<input type=\"hidden\" value=\""+id+"\" /><a  id=\"goYaoqingModal\" class=\"btn btn-primary invite-init\">加好友</a>";
+              item+=" </li>";
+              usersHtml+=item;
+              //alert(usersHtml);
+            }
+            //alert(usersHtml);
+            $("#table-ul").html(usersHtml);
+
+          } else if(data.retCode == 401) {
+            //用户信息不完整
+            $("#empty-da-img").attr("src","img/operate/empty.ico");
+            $("#empty-da-img").attr("onclick","location.href='profile.html'");
+            $("#empty-da-info").text("请完善信息");
+          }
+        });
+      };
+
+      function addUserFriend(userId){
+        $.ajax({
+          async: true,
+          type : 'get',
+          dataType : 'jsonp',
+          jsonp : 'jsoncallback', //默认callback
+          timeout : 30000,
+          data: {
+            friendUserId : userId
+          },
+          url: baseFn.url + "/userFriends/addUserFriend.json?callback=?",  // 跨域URL
+          success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+            if(data.retCode == 0) {
+              toast("成功",1000);
+              setTimeout(function() {
+
+
+              },1000);
+            } else {
+              toast(data.retMsg,3000);
+            }
+          },
+          error : function(xhr, errorType, error) {
+            alert("失败");
+          },
+          complete: function(XMLHttpRequest, textStatus){
+          }
+        });
+      }
+    </script>
+  </head>
+  <body>
+  <header class="bar bar-nav">
+    <button class="btn pull-left" id="refreshList">
+      刷新
+    </button>
+    <h1 class="title">附近拼车人列表</h1>
+  </header>
+
+  <!-- Wrap all non-bar HTML in the .content div (this is actually what scrolls) -->
+    <div class="content">
+      <ul class="table-view" id="table-ul">
+        <!--<li class="table-view-cell media">-->
+          <!--<img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/1.jpg">-->
+          <!--<div class="media-body">-->
+            <!--张涵-->
+            <!--<p>样本小区</p>-->
+            <!--<span class="dashantime">27岁</span>-->
+          <!--</div>-->
+          <!--<a  href="#yaoqingModal" class="btn btn-primary invite-init">邀请</a>-->
+        <!--</li>-->
+        <li class="table-view-cell media">
+          <span id="empty-user-info" class="empty-da-info">加载中，如果一直搜索不到附近用户,请到“我”页面，设置我的地址</span>
+        </li>
+
+      </ul>
+      <nav class="bar bar-tab">
+        <a class="tab-item" onclick="location.href='da.html'">
+          <span class="icon icon-sound2"></span>
+          <span class="tab-label">拼车计划</span>
+        </a>
+        <a class="tab-item active" >
+          <span class="icon icon-forward"></span>
+          <span class="tab-label">附近拼车人</span>
+        </a>
+        <a class="tab-item " onclick="location.href='me.html'">
+          <span class="icon icon-person"></span>
+          <span class="tab-label">我</span>
+        </a>
+      </nav>
+    </div>
+    <!-- 邀请 -->
+    <div id="yaoqingModal" class="modal">
+      <header class="bar bar-nav">
+        <a href="#gowhere">
+          <h1 class="title">
+            <span class="name">去干嘛</span>
+            <span class="icon icon-caret"></span>
+          </h1>
+        </a>
+      </header>
+      <div id="gowhere" class="popover">
+        <ul class="table-view">
+          <li class="table-view-cell" onclick="dowhat('办进京证');" class="date_what">办进京证</li>
+
+        </ul>
+      </div>
+      <div class="content">
+        <input type="hidden" id="add-user-id"/>
+      </div>
+      <!-- Icons in standard bar fixed to the bottom of the screen -->
+      <div class="bar bar-standard bar-footer">
+        <a class="btn pull-left" href="#yaoqingModal">
+          取消
+        </a>
+        <a id="btn-AddUserFriend" class="btn pull-right">
+          发出邀请
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

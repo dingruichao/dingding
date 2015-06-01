@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>我</title>
+
+    <!-- Sets initial viewport load and disables zooming  -->
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- Makes your prototype chrome-less once bookmarked to your phone's home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!-- Include the compiled Ratchet CSS -->
+    <link href="css/ratchet.min.css" rel="stylesheet">
+    <link href="css/common.css" rel="stylesheet">
+
+    <!-- Optionally, include either the iOS or Android theme -->
+    <!-- <link href="/css/ratchet-theme-ios.min.css" rel="stylesheet"> -->
+    <!-- Include the compiled Ratchet JS -->
+    <script src="js/ratchet.min.js"></script>
+    <script src="js/zepto.min.js"></script>
+    <script src="js/jam.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/timeago.js"></script>
+    <script language="javascript" type="text/javascript">
+      $(function(){
+          var community = "";
+        //search-box 随屏幕滚动 
+        var _box_y = $("div.segmented-control").offset().top; 
+        $(".content").scroll(function(){ 
+          if($(".content").scrollTop() > _box_y){ 
+            $("div.segmented-control").css({position:"fixed",
+              top:$("header").height(),"z-index":9}); 
+          } else { 
+            $("div.segmented-control").css({position:"static"}); 
+          } 
+        });
+        //获取信息并设置
+          $.ajax({
+              async: true,
+              type : 'get',
+              dataType : 'jsonp',
+              jsonp : 'jsoncallback', //默认callback
+              timeout : 10000,
+              url: baseFn.url + "/user/queryUserInfo.json?callback=?",  // 跨域URL
+              success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                  if(data.retCode == 0) {
+                      var userInfo = data.data;
+                      $("#name").text(userInfo.userName);
+                      $("#time").html(userInfo.enterAlert);
+                      if(userInfo.headPic == null || userInfo.headPic == '') {
+                          $("#headPic").attr("src","img/operate/pic.jpg");
+                      } else {
+                          $("#headPic").attr("src",userInfo.headPic);
+                      }
+                      //设置里的
+                      $("#setting-name").val(userInfo.userName);
+                      $("#setting-age").val(userInfo.age);
+                      if(userInfo.community != null) {
+                          $("#setting-community").val(userInfo.community);
+                          $("#setting-community-lng").val(userInfo.lng);
+                          $("#setting-community-lat").val(userInfo.lat);
+                      }
+                      if(userInfo.sex == '0') {
+                          $("#setting-sex").addClass("active");
+                      }
+                      if(userInfo.love == '0') {
+                          $("#setting-love").addClass("active");
+                      }
+                  } else {
+                      toast(data.retMsg,3000);
+                  }
+              },
+              error : function(xhr, errorType, error) {
+                  toast(errorType,3000);
+                  location.href = "index.html";
+              },
+              complete: function(XMLHttpRequest, textStatus){
+              }
+          });
+          getData("/recommend/queryLikeMeUserInfo.json",null,function(data) {
+              if(data.retCode == 0) {
+                  $("#nolikemeinfo").hide();
+                var dawodeHtml = "";
+                var likeme = data.data;
+                  $("#dawodeNum").text(likeme.length);
+                for(var i=0;i<likeme.length;i++) {
+                    dawodeHtml += "<li class=\"table-view-cell media\">"+
+                    "<img class=\"media-object pull-left dawodehead\" width=65 height=65 src=\""+likeme[i].headPic+"\">"+
+                    "<div class=\"media-body\">"+
+                            likeme[i].userName+
+                    "<p style=\"height: 20px;\">"+likeme[i].community+"</p>"+
+                    "<span class=\"dashantime timeago\" title=\""+likeme[i].likeCreateTime+"\"></span>"+
+                    "</div>"+
+                    "<span class=\"badge\">"+likeme[i].age+"</span>"+
+                            "</li>";
+                }
+                $("#dawodeul").append(dawodeHtml);
+                $("span.timeago").timeago();
+              } else if(data.retCode == 402) {
+                  $("#dawodeNum").text(0);
+              }
+          });
+          $("#setting-community-choose").live("touchstart",function() {
+              if (window.navigator.geolocation) {
+                 var options = {
+                   enableHighAccuracy: true
+                 };
+                 window.navigator.geolocation.getCurrentPosition(handleSuccess, handleError, options);
+              } else {
+                 alert("浏览器不支持html5来获取地理位置信息");
+              }
+          });
+          $(".community-choose").live("touchstart",function() {
+              $(".community-choose").removeClass("community-choose-active");
+              $(this).addClass("community-choose-active");
+              community = $(this).text();
+              $("#setting-community-lng").val($(this).prev().val());
+              $("#setting-community-lat").val($(this).next().val());
+              $("#chooseCommunityButton").removeClass("btn-disable");
+          });
+          $("#chooseCommunityButton").live("touchstart",function() {
+              if(community == '') {
+                  return;
+              }
+              $("#setting-community").val(community);
+              $("#chooseCommunity").removeClass("active");
+          });
+          $("#saveUserSetting").live("touchstart",function() {
+              var age = $("#setting-age").val();
+              if(isNaN(age) || !isNaN(age) && age <= 16) {
+                  toast("你年龄这么小，啧啧",3000);
+                  return;
+              }
+              var community = $("#setting-community").val();
+              if($("#setting-community").val() == '') {
+                  toast("请选择下您的社区哦",3000);
+                  return;
+              }
+              var sex = $("#setting-sex").hasClass("active") ? 0 : 1;
+              var love = $("#setting-love").hasClass("active") ? 0 : 1;
+              $.ajax({
+                  async: true,
+                  type : 'get',
+                  dataType : 'jsonp',
+                  jsonp : 'jsoncallback', //默认callback
+                  timeout : 10000,
+                  data: {
+                      age : age,
+                      community : community,
+                      lng : $("#setting-community-lng").val(),
+                      lat : $("#setting-community-lat").val(),
+                      sex : sex,
+                      love : love
+                  },
+                  url: baseFn.url + "/user/saveSetting.json?callback=?",  // 跨域URL
+                  success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                      if(data.retCode == 0) {
+                          toast("保存成功",1000);
+                          setTimeout(function() {
+                              $("#settingsModal").removeClass("active");
+                              $("#dynymicCommunity").text(community);
+                              $("#setting-community").val(community);
+                          },1000);
+                      } else {
+                          toast(data.retMsg,3000);
+                      }
+                  },
+                  error : function(xhr, errorType, error) {
+                      alert("失败");
+                  },
+                  complete: function(XMLHttpRequest, textStatus){
+                  }
+              });
+          });
+          $("#logOut").live("touchstart",function() {
+              $.ajax({
+                  async: true,
+                  type : 'get',
+                  dataType : 'jsonp',
+                  jsonp : 'jsoncallback', //默认callback
+                  timeout : 10000,
+                  url: baseFn.url + "/user/logout.json?callback=?",  // 跨域URL
+                  success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+                      if(data.retCode == 0) {
+                          sessionStorage.removeItem("recommend_email_list");
+                          window.location = "index.html";
+                      } else {
+                          toast(data.retMsg,3000);
+                      }
+                  },
+                  error : function(xhr, errorType, error) {
+                      alert("失败");
+                  },
+                  complete: function(XMLHttpRequest, textStatus){
+                  }
+              });
+          });
+      });
+      function handleSuccess(position){
+        // 获取到当前位置经纬度  本例中是chrome浏览器取到的是google地图中的经纬度
+        var lng = position.coords.longitude;
+        var lat = position.coords.latitude;
+        $.ajax({
+          async: true,
+          type : 'get',
+          dataType : 'jsonp',
+          jsonp : 'jsoncallback', //默认callback
+          timeout : 10000,
+            data: {
+                type : 0,
+                lng : lng,
+                lat : lat
+            },
+          url: baseFn.url + "/location/findSurroundedPOI.json?callback=?",  // 跨域URL
+          success: function (data, status, xhr) { //客户端jquery预先定义好的callback函数，成功获取跨域服务器上的json数据后，会动态执行这个callback函数
+              if(data.retCode == 0) {
+                  $("#surroundedCommunity").empty();
+                  var poiList = data.data;
+                  var communitys = "";
+                  for(var i=0;i<poiList.length;i++) {
+                      communitys += "<input class='lng' type='hidden' value='"+poiList[i].coordinate.lng+"'/>" +
+                                    "<span class=\"community-choose\">"+poiList[i].name+"</span>" +
+                                    "<input class='lat' type='hidden' value='"+poiList[i].coordinate.lat+"'/>";
+                  }
+                  $("#surroundedCommunity").append(communitys);
+              } else {
+                  toast(data.retMsg,3000);
+              }
+          },
+          error : function(xhr, errorType, error) {
+              alert("失败");
+          },
+          complete: function(XMLHttpRequest, textStatus){
+          }
+        });
+      }
+      function handleError(error){
+
+       }
+    </script>
+  </head>
+  <body>
+    <!-- Make sure all your bars are the first things in your <body> -->
+    <header class="bar bar-nav">
+      <a class="icon icon-gear pull-right" href="#settingsModal"></a>
+      <h1 class="title">我</h1>
+    </header>
+
+    <!-- Wrap all non-bar HTML in the .content div (this is actually what scrolls) -->
+    <div class="content">
+      <div id="head">
+        <a href="profile.html" data-ignore="push">
+          <img id="headPic" width=80 height=80 src="" />
+        </a>
+      </div>
+      <div id="profile">
+        <div id="name"></div>
+        <div id="time"></div>
+      </div>
+      <div class="segmented-control">
+        <a class="control-item active" href="#dawode">
+          搭我的(<span id="dawodeNum"></span>)
+        </a>
+        <a class="control-item" href="#yuewode">
+          约我的(1)
+        </a>
+      </div>
+      <div class="card">
+        <span id="dawode" class="control-content active">
+            <div id="nolikemeinfo" style="text-align: center;margin-top:20px;margin-bottom:20px;">
+                <div><img id="empty-da-img" class="empty-da-img" src="img/operate/nolikeme.gif"/> </div>
+                <span id="empty-da-info" class="empty-da-info">还没人勾搭过您</span>
+            </div>
+          <ul class="table-view" id=dawodeul>
+          </ul>
+        </span>
+        <span id="yuewode" class="control-content">
+          <ul class="table-view">
+            <li class="table-view-cell media">
+              <a class="navigate-right">
+                <img class="media-object pull-left dawodehead" width=65 height=65 src="img/head/3.jpg">
+                <div class="media-body">
+                  段敏
+                  <div class="dashantime">明天早上9点半</div>
+                  <p style="height: 20px;">在 百尚电影院 看《变形金刚4》</p>
+                </div>
+                <span class="badge">25</span>
+              </a>
+            </li>
+          </ul>
+        </span>
+      </div>
+      <nav class="bar bar-tab">
+        <a class="tab-item" onclick="location.href='da.html'">
+          <span class="icon icon-sound2"></span>
+          <span class="tab-label">搭讪</span>
+        </a>
+        <a class="tab-item" onclick="location.href='yue.html'">
+          <span class="icon icon-forward"></span>
+          <span class="tab-label">约会</span>
+        </a>
+        <a class="tab-item active" href="#">
+          <span class="icon icon-person"></span>
+          <span class="tab-label">我</span>
+        </a>
+      </nav>
+    </div>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+      <header class="bar bar-nav">
+        <a class="icon icon-close pull-right" href="#settingsModal"></a>
+        <h1 class="title">设置</h1>
+      </header>
+
+      <div class="content">
+        <h5 class="content-padded">基本资料</h5>
+        <form class="input-group">
+            <div class="input-row">
+                <label>姓名</label>
+                <input id="setting-name" type="text" placeholder="姓名" disabled value="">
+            </div>
+            <div class="input-row">
+                <label>年龄</label>
+                <input id="setting-age" type="text" placeholder="18">
+            </div>
+            <div class="input-row">
+                <label>所在小区</label>
+                <input id="setting-community" disabled type="text" placeholder="请选择">
+                <a id="setting-community-choose" class="btn" href='#chooseCommunity'>选择</a>
+                <input type="hidden" id="setting-community-lng"/>
+                <input type="hidden" id="setting-community-lat"/>
+            </div>
+        </form>
+        <h5 class="content-padded">性取向</h5>
+        <ul class="table-view">
+          <li class="table-view-cell">
+            性别
+            <div class="toggle sex-fire" id="setting-sex">
+              <div class="toggle-handle"></div>
+            </div>
+          </li>
+            <li class="table-view-cell">
+                爱好
+                <div class="toggle sex-fire" id="setting-love">
+                    <div class="toggle-handle"></div>
+                </div>
+            </li>
+        </ul>
+        <button id="saveUserSetting" class="btn btn-positive btn-block">保存</button>
+        <button id="logOut" class="btn btn-negative btn-block">注销</button>
+      </div>
+    </div>
+    <div id="chooseCommunity" class="modal">
+        <header class="bar bar-nav">
+            <a class="btn pull-left" href="#chooseCommunity">返回</a>
+            <h1 class="title">选择小区</h1>
+            <a id="chooseCommunityButton" class="btn pull-right btn-disable">
+                完成
+            </a>
+        </header>
+        <div class="content">
+            <div id="surroundedCommunity">
+            </div>
+        </div>
+    </div>
+    <link href="css/common.css" rel="stylesheet">
+    <link href="css/me.css" rel="stylesheet">
+  </body>
+</html>
